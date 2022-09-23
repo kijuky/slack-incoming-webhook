@@ -1,5 +1,5 @@
-class LineNotify < Formula
-  desc "LINE Notify CLI."
+class SlackIncomingWebhook < Formula
+  desc "Slack Incoming-Webhook CLI."
   homepage "https://github.com/kijuky/slack-incoming-webhook"
   version "$VERSION"
   license "MIT"
