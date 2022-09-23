@@ -1,0 +1,13 @@
+class LineNotify < Formula
+  desc "LINE Notify CLI."
+  homepage "https://github.com/kijuky/slack-incoming-webhook"
+  version "$VERSION"
+  license "MIT"
+
+  url "https://github.com/kijuky/slack-incoming-webhook/releases/download/$VERSION/slack-incoming-webhook.zip"
+  sha256 "$SHA256_MACOS_INTEL"
+
+  def install
+    bin.install "slack-incoming-webhook"
+  end
+end

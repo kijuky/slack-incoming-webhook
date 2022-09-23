@@ -1,0 +1,113 @@
+name: Check
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+jobs:
+  scalafmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Scala
+        uses: coursier/setup-action@v1
+      - name: Check Scalafmt
+        run: sbt scalafmtCheck scalafmtSbtCheck Test/scalafmtCheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Scala
+        uses: coursier/setup-action@v1
+      - name: Test Sbt
+        run: sbt test
+
+  native-image:
+    runs-on: macos-latest
+    needs:
+      - scalafmt
+      - test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup sbt
+        uses: coursier/setup-action@v1
+      - name: Build native image
+        run: sbt nativeImage
+      - name: Archive artifacts
+        if: "${{ github.ref_type == 'tag' }}"
+        working-directory: target/native-image
+        run: zip slack-incoming-webhook.zip slack-incoming-webhook
+      - name: Upload native image
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-intel
+          path: target/native-image/slack-incoming-webhook.zip
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs:
+      - native-image
+    if: "${{ github.ref_type == 'tag' }}"
+    steps:
+      - name: Download native image
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-intel
+      - name: Create Release
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            slack-incoming-webhook.zip
+
+  create-formula:
+    runs-on: ubuntu-latest
+    needs:
+      - create-release
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: Download native image
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-intel
+      - name: Calc SHA-256
+        run: echo "sha256_macos_intel=$(sha256sum slack-incoming-webhook.zip | cut -f 1 -d ' ')" >> $GITHUB_ENV
+      - name: Update formula
+        uses: danielr1996/envsubst-action@1.1.0
+        env:
+          VERSION: "${{ github.ref_name }}"
+          SHA256_MACOS_INTEL: "${{ env.sha256_macos_intel }}"
+        with:
+          input: slack-incoming-webhook.rb.envsubst
+          output: slack-incoming-webhook.rb
+      - name: Upload formula
+        uses: actions/upload-artifact@v3
+        with:
+          name: formula
+          path: slack-incoming-webhook.rb
+
+  update-tap:
+    runs-on: ubuntu-latest
+    needs:
+      - create-formula
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          repository: kijuky/homebrew-tools
+      - name: Download formula
+        uses: actions/download-artifact@v3
+        with:
+          name: formula
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: "${{ secrets.ADMIN_GITHUB_TOKEN }}"
+          delete-branch: true
