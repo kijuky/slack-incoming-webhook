@@ -1,7 +1,7 @@
 lazy val root = (project in file("."))
   .settings(
     name := "slack-incoming-webhook",
-    scalaVersion := "2.13.9",
+    scalaVersion := "2.13.10",
     scalacOptions ++= Seq("-Werror", "-Xlint"),
     libraryDependencies ++= Seq(
       "com.github.scopt" %% "scopt" % "4.1.0",
