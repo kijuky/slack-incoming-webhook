@@ -5,7 +5,7 @@ lazy val root = (project in file("."))
     scalacOptions ++= Seq("-Werror", "-Xlint"),
     libraryDependencies ++= Seq(
       "com.github.scopt" %% "scopt" % "4.1.0",
-      "com.slack.api" % "slack-api-client" % "1.27.1",
+      "com.slack.api" % "slack-api-client" % "1.27.2",
       "org.slf4j" % "slf4j-nop" % "1.7.36"
     )
   )
